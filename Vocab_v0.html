@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="คลังคำศัพท์">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%231F3A3D'/%3E%3Ctext x='50' y='62' font-size='46' text-anchor='middle' fill='%23E4D2A0' font-family='Georgia,serif'%3EVV%3C/text%3E%3C/svg%3E">
+<title>คลังคำศัพท์ · Vocabulary Vault</title>
+<style>
+  :root{
+    --ink:#1F3A3D;
+    --ink-soft:#3E5A5D;
+    --paper:#EDEBE3;
+    --paper-card:#F7F5EF;
+    --gold:#B9902E;
+    --gold-soft:#E4D2A0;
+    --line:#CFCBBC;
+    --red:#A6432F;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family: 'Georgia', 'Noto Serif Thai', serif;
+    min-height:100vh;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  .topbar{
+    border-bottom:2px solid var(--ink);
+    padding:22px 32px 16px;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .brand{
+    display:flex;
+    align-items:baseline;
+    gap:12px;
+  }
+  .brand .mark{
+    font-family: 'Georgia', serif;
+    font-size:34px;
+    font-weight:700;
+    letter-spacing:0.5px;
+  }
+  .brand .sub{
+    font-family: 'Courier New', monospace;
+    font-size:11px;
+    letter-spacing:3px;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+  }
+  .card-index{
+    font-family:'Courier New', monospace;
+    font-size:11px;
+    color:var(--ink-soft);
+    text-align:right;
+    line-height:1.6;
+  }
+  .layout{
+    display:grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap:24px;
+    padding:28px 32px 60px;
+    max-width:1200px;
+    margin:0 auto;
+  }
+  @media (max-width: 860px){
+    .layout{grid-template-columns:1fr;}
+  }
+  .panel{
+    background:var(--paper-card);
+    border:1px solid var(--line);
+    position:relative;
+  }
+  .panel::before{
+    content:"";
+    position:absolute;
+    top:8px;left:8px;right:8px;bottom:8px;
+    border:1px solid var(--line);
+    pointer-events:none;
+  }
+  .panel-head{
+    padding:14px 20px;
+    border-bottom:1px solid var(--line);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .panel-head h2{
+    margin:0;
+    font-size:15px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    font-family:'Courier New', monospace;
+    color:var(--ink-soft);
+  }
+  .panel-body{
+    padding:20px;
+  }
+  textarea{
+    width:100%;
+    min-height:160px;
+    resize:vertical;
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--ink);
+    font-family:'Georgia', 'Noto Serif Thai', serif;
+    font-size:15px;
+    line-height:1.6;
+    padding:14px;
+  }
+  textarea:focus{
+    outline:2px solid var(--gold);
+    outline-offset:1px;
+  }
+  .actions{
+    display:flex;
+    gap:10px;
+    margin-top:12px;
+    flex-wrap:wrap;
+  }
+  button{
+    font-family:'Courier New', monospace;
+    font-size:12px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    padding:10px 18px;
+    border:1px solid var(--ink);
+    background:var(--ink);
+    color:var(--paper-card);
+    cursor:pointer;
+    transition: all .15s ease;
+  }
+  button:hover{
+    background:var(--gold);
+    border-color:var(--gold);
+  }
+  button.ghost{
+    background:transparent;
+    color:var(--ink);
+  }
+  button.ghost:hover{
+    background:var(--ink);
+    color:var(--paper-card);
+  }
+  button:focus-visible{
+    outline:3px solid var(--gold);
+    outline-offset:2px;
+  }
+  #article{
+    font-size:17px;
+    line-height:2;
+    white-space:pre-wrap;
+  }
+  #article .placeholder{
+    color:var(--ink-soft);
+    font-style:italic;
+    font-size:15px;
+    line-height:1.7;
+  }
+  .word{
+    cursor:pointer;
+    border-bottom:1px dotted var(--ink-soft);
+    padding:0 1px;
+    transition: background .12s ease;
+  }
+  .word:hover{
+    background:var(--gold-soft);
+  }
+  .word.active{
+    background:var(--gold);
+    color:#fff;
+    border-bottom-color:var(--gold);
+  }
+  .word.saved{
+    border-bottom:1px solid var(--red);
+  }
+  .lookup-card{
+    min-height:220px;
+  }
+  .lookup-empty{
+    color:var(--ink-soft);
+    font-style:italic;
+    font-size:14px;
+    line-height:1.6;
+  }
+  .lookup-word{
+    font-size:26px;
+    font-weight:700;
+    margin:0 0 2px;
+  }
+  .lookup-phonetic{
+    color:var(--ink-soft);
+    font-family:'Courier New', monospace;
+    font-size:13px;
+    margin:0 0 14px;
+  }
+  .lookup-row{
+    margin-bottom:12px;
+  }
+  .lookup-label{
+    font-family:'Courier New', monospace;
+    font-size:10px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--gold);
+    display:block;
+    margin-bottom:4px;
+  }
+  .lookup-value{
+    font-size:16px;
+    line-height:1.5;
+  }
+  .lookup-value.th{
+    font-size:19px;
+    color:var(--ink);
+  }
+  .pos{
+    display:inline-block;
+    font-family:'Courier New', monospace;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    color:var(--ink-soft);
+    border:1px solid var(--line);
+    padding:1px 6px;
+    margin-bottom:6px;
+  }
+  .synonym-tag{
+    display:inline-block;
+    font-size:13px;
+    background:var(--paper);
+    border:1px solid var(--line);
+    padding:2px 9px;
+    margin:0 6px 6px 0;
+    border-radius:2px;
+    color:var(--ink-soft);
+  }
+  .example-box{
+    background:var(--paper);
+    border-left:3px solid var(--gold);
+    padding:10px 14px;
+    margin-top:4px;
+  }
+  .example-en{
+    font-style:italic;
+    font-size:15px;
+    margin:0 0 6px;
+  }
+  .example-th{
+    font-size:14px;
+    color:var(--ink-soft);
+    margin:0;
+  }
+  .save-row{
+    margin-top:16px;
+    padding-top:14px;
+    border-top:1px solid var(--line);
+  }
+  .spinner-text{
+    font-family:'Courier New', monospace;
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+  .saved-list{
+    margin-top:18px;
+  }
+  .saved-list h3{
+    font-family:'Courier New', monospace;
+    font-size:11px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin:0 0 10px;
+    padding-top:16px;
+    border-top:1px solid var(--line);
+  }
+  .saved-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    padding:8px 0;
+    border-bottom:1px solid var(--line);
+    font-size:14px;
+  }
+  .saved-item:last-child{border-bottom:none;}
+  .saved-item .en{
+    font-weight:700;
+    margin-right:10px;
+  }
+  .saved-item .th{
+    color:var(--ink-soft);
+    flex:1;
+    text-align:right;
+    margin-right:10px;
+  }
+  .remove-btn{
+    background:none;
+    border:none;
+    color:var(--red);
+    font-family:'Courier New', monospace;
+    font-size:11px;
+    cursor:pointer;
+    padding:2px 4px;
+  }
+  .remove-btn:hover{
+    text-decoration:underline;
+    background:none;
+  }
+  .empty-saved{
+    color:var(--ink-soft);
+    font-style:italic;
+    font-size:13px;
+  }
+  footer{
+    text-align:center;
+    font-family:'Courier New', monospace;
+    font-size:11px;
+    letter-spacing:1px;
+    color:var(--ink-soft);
+    padding-bottom:24px;
+  }
+
+  /* TOEFL rewrite panel */
+  .toefl-box{
+    margin-top:16px;
+    padding-top:16px;
+    border-top:1px dashed var(--line);
+  }
+  .toefl-output{
+    background:var(--paper);
+    border-left:3px solid var(--ink);
+    padding:14px 16px;
+    font-size:15px;
+    line-height:1.7;
+    white-space:pre-wrap;
+    margin-top:10px;
+  }
+  .toefl-notes{
+    margin-top:10px;
+    font-size:13px;
+    color:var(--ink-soft);
+    font-style:italic;
+    line-height:1.6;
+  }
+
+  /* Flashcard review modal */
+  .modal-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(31,58,61,0.55);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:100;
+    padding:20px;
+  }
+  .modal-overlay.hidden{ display:none; }
+  .review-modal{
+    background:var(--paper-card);
+    border:1px solid var(--ink);
+    max-width:480px;
+    width:100%;
+    padding:0;
+    position:relative;
+  }
+  .review-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:14px 20px;
+    border-bottom:1px solid var(--line);
+  }
+  .review-head h2{
+    margin:0;
+    font-size:14px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    font-family:'Courier New', monospace;
+    color:var(--ink-soft);
+  }
+  .close-btn{
+    background:none;
+    border:none;
+    color:var(--ink);
+    font-size:20px;
+    line-height:1;
+    cursor:pointer;
+    padding:2px 6px;
+  }
+  .close-btn:hover{
+    background:none;
+    color:var(--red);
+  }
+  .review-body{
+    padding:26px 24px;
+    min-height:280px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+  }
+  .review-progress{
+    font-family:'Courier New', monospace;
+    font-size:11px;
+    letter-spacing:1px;
+    color:var(--ink-soft);
+    text-align:center;
+    margin-bottom:16px;
+  }
+  .flashcard{
+    border:1px solid var(--line);
+    background:#fff;
+    padding:26px 20px;
+    text-align:center;
+    cursor:pointer;
+    min-height:180px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+  }
+  .flashcard .fc-word{
+    font-size:30px;
+    font-weight:700;
+  }
+  .flashcard .fc-hint{
+    font-family:'Courier New', monospace;
+    font-size:11px;
+    letter-spacing:1px;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+  }
+  .flashcard .fc-back{
+    display:none;
+  }
+  .flashcard.flipped .fc-front{ display:none; }
+  .flashcard.flipped .fc-back{ display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .fc-thai{
+    font-size:24px;
+    color:var(--gold);
+    font-weight:700;
+  }
+  .fc-example{
+    font-size:13px;
+    font-style:italic;
+    color:var(--ink-soft);
+    max-width:360px;
+  }
+  .review-nav{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    margin-top:18px;
+  }
+  .review-nav button{
+    flex:1;
+  }
+  .review-empty{
+    text-align:center;
+    color:var(--ink-soft);
+    font-style:italic;
+    padding:40px 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <span class="mark">คลังคำศัพท์</span>
+    <span class="sub">Vocabulary Vault</span>
+  </div>
+  <div class="card-index">
+    บัตรคำ · CARD CATALOG<br>
+    วางบทความ → แตะคำศัพท์ → ดูคำแปล
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- LEFT: Article panel -->
+  <div class="panel">
+    <div class="panel-head">
+      <h2>บทความ</h2>
+      <span class="lookup-label" id="wordCount" style="margin:0;"></span>
+    </div>
+    <div class="panel-body">
+      <textarea id="inputArea" placeholder="วางบทความภาษาอังกฤษของคุณที่นี่..."></textarea>
+      <div class="actions">
+        <button id="renderBtn">แสดงคำศัพท์ที่กดได้</button>
+        <button class="ghost" id="toeflBtn">แปลงเป็นสไตล์ TOEFL</button>
+        <button class="ghost" id="clearBtn">ล้างข้อความ</button>
+      </div>
+      <div class="toefl-box" id="toeflBox" style="display:none;">
+        <span class="lookup-label">ฉบับปรับสไตล์ TOEFL</span>
+        <div class="toefl-output" id="toeflOutput"></div>
+        <div class="toefl-notes" id="toeflNotes"></div>
+      </div>
+    </div>
+    <div class="panel-head" style="border-top:1px solid var(--line);">
+      <h2>ข้อความ (แตะคำเพื่อแปล)</h2>
+    </div>
+    <div class="panel-body">
+      <div id="article"><span class="placeholder">ยังไม่มีบทความ — วางข้อความด้านบนแล้วกด "แสดงคำศัพท์ที่กดได้"</span></div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Lookup panel -->
+  <div class="panel">
+    <div class="panel-head">
+      <h2>คำแปล</h2>
+    </div>
+    <div class="panel-body lookup-card">
+      <div id="lookupContent">
+        <p class="lookup-empty">แตะคำศัพท์ในบทความทางซ้าย เพื่อดูคำแปลและความหมายที่นี่</p>
+      </div>
+
+      <div class="saved-list">
+        <h3 style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--line); padding-top:16px;">
+          <span>คำที่บันทึกไว้ (<span id="savedCount">0</span>)</span>
+          <span style="display:flex; gap:6px;">
+            <button id="exportBtn" class="ghost" style="padding:6px 12px; font-size:10px;">Export .txt</button>
+            <button id="reviewBtn" style="padding:6px 12px; font-size:10px;">ทบทวนคำศัพท์</button>
+          </span>
+        </h3>
+        <div id="savedItems">
+          <p class="empty-saved">ยังไม่มีคำที่บันทึก</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>MADE FOR READERS · EN → TH</footer>
+
+<div class="modal-overlay hidden" id="reviewOverlay">
+  <div class="review-modal">
+    <div class="review-head">
+      <h2>ทบทวนคำศัพท์</h2>
+      <button class="close-btn" id="closeReviewBtn">&times;</button>
+    </div>
+    <div class="review-body" id="reviewBody">
+      <!-- filled by JS -->
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const inputArea = document.getElementById('inputArea');
+  const renderBtn = document.getElementById('renderBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const toeflBtn = document.getElementById('toeflBtn');
+  const toeflBox = document.getElementById('toeflBox');
+  const toeflOutput = document.getElementById('toeflOutput');
+  const toeflNotes = document.getElementById('toeflNotes');
+  const article = document.getElementById('article');
+  const lookupContent = document.getElementById('lookupContent');
+  const savedItems = document.getElementById('savedItems');
+  const savedCount = document.getElementById('savedCount');
+  const wordCount = document.getElementById('wordCount');
+  const reviewBtn = document.getElementById('reviewBtn');
+  const exportBtn = document.getElementById('exportBtn');
+  const reviewOverlay = document.getElementById('reviewOverlay');
+  const reviewBody = document.getElementById('reviewBody');
+  const closeReviewBtn = document.getElementById('closeReviewBtn');
+
+  let saved = []; // {word, thai}
+  let activeSpan = null;
+  let requestToken = 0;
+  const cache = {}; // word(lowercase) -> info object
+
+  function escapeHtml(s){
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function wordify(text){
+    const tokens = text.split(/(\s+)/);
+    let html = '';
+    let count = 0;
+    tokens.forEach(tok=>{
+      if(/^[A-Za-z][A-Za-z'-]*$/.test(tok)){
+        count++;
+        const cleanWord = tok.replace(/^['-]+|['-]+$/g,'');
+        html += `<span class="word" data-word="${escapeHtml(cleanWord)}">${escapeHtml(tok)}</span>`;
+      } else {
+        html += escapeHtml(tok);
+      }
+    });
+    return { html, count };
+  }
+
+  function renderArticle(){
+    const text = inputArea.value;
+    if(!text.trim()){
+      article.innerHTML = '<span class="placeholder">ยังไม่มีบทความ — วางข้อความด้านบนแล้วกด "แสดงคำศัพท์ที่กดได้"</span>';
+      wordCount.textContent = '';
+      return;
+    }
+    // Split keeping whitespace/punctuation, wrap word-like tokens in spans
+    const { html, count } = wordify(text);
+    article.innerHTML = html;
+    wordCount.textContent = count + ' คำ';
+    markSavedWords();
+  }
+
+  function markSavedWords(){
+    const savedSet = new Set(saved.map(s=>s.word.toLowerCase()));
+    document.querySelectorAll('#article .word').forEach(el=>{
+      if(savedSet.has(el.dataset.word.toLowerCase())){
+        el.classList.add('saved');
+      } else {
+        el.classList.remove('saved');
+      }
+    });
+  }
+
+  renderBtn.addEventListener('click', renderArticle);
+  clearBtn.addEventListener('click', ()=>{
+    inputArea.value = '';
+    renderArticle();
+    toeflBox.style.display = 'none';
+  });
+
+  toeflBtn.addEventListener('click', convertToToefl);
+
+  async function convertToToefl(){
+    const text = inputArea.value.trim();
+    if(!text){
+      alert('กรุณาวางข้อความก่อนแปลงเป็นสไตล์ TOEFL');
+      return;
+    }
+    toeflBox.style.display = 'block';
+    toeflOutput.textContent = 'กำลังปรับสำนวนให้เป็นสไตล์ TOEFL...';
+    toeflNotes.textContent = '';
+    toeflBtn.disabled = true;
+
+    const prompt = `แปลง/ปรับปรุงข้อความภาษาอังกฤษต่อไปนี้ให้เป็นสำนวนที่เหมาะสำหรับการเขียนแบบ TOEFL (Independent/Integrated Writing) กล่าวคือ: ใช้คำศัพท์ระดับ academic, โครงสร้างประโยคซับซ้อนขึ้นอย่างเหมาะสม, น้ำเสียงเป็นทางการ, ต่อเนื่องเป็นเหตุเป็นผล แต่ยังคงความหมายเดิมไว้ครบถ้วน:
+
+"""
+${text}
+"""
+
+ตอบกลับเป็น JSON เท่านั้น ห้ามมี markdown fence ห้ามมีข้อความอื่นนอกจาก JSON รูปแบบนี้เป๊ะ:
+{"toefl_text":"ข้อความฉบับปรับสไตล์ TOEFL ทั้งหมด","notes":"อธิบายสั้นๆเป็นภาษาไทยว่าปรับปรุงอะไรบ้าง เช่น คำศัพท์ที่เปลี่ยน โครงสร้างประโยคที่ปรับ"}`;
+
+    try{
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6",
+          max_tokens: 1500,
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
+      const data = await response.json();
+      const rawText = (data.content || [])
+        .map(item => item.type === "text" ? item.text : "")
+        .filter(Boolean)
+        .join("\n")
+        .replace(/```json|```/g, "")
+        .trim();
+      const parsed = JSON.parse(rawText);
+      const toeflText = parsed.toefl_text || 'ไม่สามารถแปลงข้อความได้';
+      toeflOutput.innerHTML = wordify(toeflText).html;
+      toeflNotes.textContent = parsed.notes ? ('หมายเหตุ: ' + parsed.notes) : '';
+    }catch(err){
+      toeflOutput.textContent = 'เกิดข้อผิดพลาด ลองใหม่อีกครั้ง';
+      toeflNotes.textContent = '';
+    }finally{
+      toeflBtn.disabled = false;
+    }
+  }
+
+  function attachWordClicks(container){
+    container.addEventListener('click', (e)=>{
+      const target = e.target.closest('.word');
+      if(!target) return;
+      if(activeSpan) activeSpan.classList.remove('active');
+      target.classList.add('active');
+      activeSpan = target;
+      lookupWord(target.dataset.word, target);
+    });
+  }
+  attachWordClicks(article);
+  attachWordClicks(toeflOutput);
+
+  async function lookupWord(word, spanEl){
+    const myToken = ++requestToken;
+    const key = word.toLowerCase();
+
+    if(cache[key]){
+      renderLookup(word, cache[key]);
+      return;
+    }
+
+    lookupContent.innerHTML = `<p class="spinner-text">กำลังค้นหา "${escapeHtml(word)}" ...</p>`;
+
+    const prompt = `ให้ข้อมูลคำศัพท์ภาษาอังกฤษคำนี้: "${word}"
+
+ตอบกลับเป็น JSON เท่านั้น ห้ามมีข้อความอื่น ห้ามใส่ markdown fence (\`\`\`) ห้ามมีคำอธิบายเพิ่มเติมใดๆ ทั้งสิ้น ให้ตรงตามรูปแบบนี้เป๊ะ:
+
+{"phonetic":"การออกเสียงแบบ IPA เช่น /haɪ/","pos":["ชนิดของคำ เช่น noun, verb, adjective, adverb ใส่ได้มากกว่า 1"],"thai":"คำแปลภาษาไทยที่ตรงและกระชับที่สุด","definition_en":"คำอธิบายความหมายเป็นภาษาอังกฤษแบบสั้นกระชับ 1 ประโยค","synonyms":["คำเหมือนภาษาอังกฤษ 3-5 คำ"],"example_en":"ประโยคตัวอย่างภาษาอังกฤษสั้นๆที่ใช้คำนี้","example_th":"คำแปลภาษาไทยของประโยคตัวอย่าง"}
+
+ถ้า "${word}" ไม่ใช่คำภาษาอังกฤษที่มีความหมาย ให้ตอบ {"error":"not_found"} เท่านั้น`;
+
+    let info;
+    try{
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6",
+          max_tokens: 1000,
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
+      const data = await response.json();
+      const rawText = (data.content || [])
+        .map(item => item.type === "text" ? item.text : "")
+        .filter(Boolean)
+        .join("\n")
+        .replace(/```json|```/g, "")
+        .trim();
+
+      const parsed = JSON.parse(rawText);
+
+      if(parsed.error){
+        info = { errorMsg: 'ไม่พบข้อมูลคำนี้ อาจสะกดผิดหรือไม่ใช่คำภาษาอังกฤษ' };
+      } else {
+        info = {
+          phonetic: parsed.phonetic || '',
+          posList: Array.isArray(parsed.pos) ? parsed.pos : [],
+          thaiTranslation: parsed.thai || '',
+          definitionEn: parsed.definition_en || '',
+          synonyms: Array.isArray(parsed.synonyms) ? parsed.synonyms : [],
+          exampleEn: parsed.example_en || '',
+          exampleTh: parsed.example_th || '',
+          errorMsg: ''
+        };
+        cache[key] = info;
+      }
+    }catch(err){
+      info = { errorMsg: 'เกิดข้อผิดพลาดในการค้นหาคำนี้ ลองใหม่อีกครั้ง' };
+    }
+
+    if(myToken !== requestToken) return; // a newer lookup started, discard this result
+    renderLookup(word, info);
+  }
+
+  function renderLookup(word, info){
+    let html = `<p class="lookup-word">${escapeHtml(word)}</p>`;
+
+    if(info.errorMsg && !info.thaiTranslation){
+      html += `<p class="lookup-empty">${escapeHtml(info.errorMsg)}</p>`;
+      lookupContent.innerHTML = html;
+      return;
+    }
+
+    if(info.phonetic){
+      html += `<p class="lookup-phonetic">${escapeHtml(info.phonetic)}</p>`;
+    }
+    if(info.posList && info.posList.length){
+      html += `<div style="margin-bottom:10px;">${info.posList.slice(0,4).map(p=>`<span class="pos">${escapeHtml(p)}</span>`).join(' ')}</div>`;
+    }
+
+    html += `<div class="lookup-row">
+      <span class="lookup-label">คำแปลภาษาไทย</span>
+      <div class="lookup-value th">${info.thaiTranslation ? escapeHtml(info.thaiTranslation) : 'ไม่พบคำแปล'}</div>
+    </div>`;
+
+    if(info.definitionEn){
+      html += `<div class="lookup-row">
+        <span class="lookup-label">ความหมาย (English)</span>
+        <div class="lookup-value">${escapeHtml(info.definitionEn)}</div>
+      </div>`;
+    }
+
+    if(info.synonyms && info.synonyms.length){
+      html += `<div class="lookup-row">
+        <span class="lookup-label">คำเหมือน (Synonyms)</span>
+        <div>${info.synonyms.map(s=>`<span class="synonym-tag">${escapeHtml(s)}</span>`).join('')}</div>
+      </div>`;
+    }
+
+    if(info.exampleEn){
+      html += `<div class="lookup-row">
+        <span class="lookup-label">ตัวอย่างประโยค</span>
+        <div class="example-box">
+          <p class="example-en">${escapeHtml(info.exampleEn)}</p>
+          ${info.exampleTh ? `<p class="example-th">${escapeHtml(info.exampleTh)}</p>` : ''}
+        </div>
+      </div>`;
+    }
+
+    const alreadySaved = saved.some(s=>s.word.toLowerCase() === word.toLowerCase());
+    html += `<div class="save-row">
+      <button id="saveWordBtn" ${alreadySaved ? 'disabled' : ''}>${alreadySaved ? 'บันทึกแล้ว' : 'บันทึกคำนี้'}</button>
+    </div>`;
+
+    lookupContent.innerHTML = html;
+
+    const saveBtn = document.getElementById('saveWordBtn');
+    if(saveBtn && !alreadySaved){
+      saveBtn.addEventListener('click', ()=>{
+        saved.unshift({
+          word,
+          thai: info.thaiTranslation || '—',
+          phonetic: info.phonetic || '',
+          posList: info.posList || [],
+          definitionEn: info.definitionEn || '',
+          synonyms: info.synonyms || [],
+          exampleEn: info.exampleEn || '',
+          exampleTh: info.exampleTh || ''
+        });
+        renderSavedList();
+        markSavedWords();
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'บันทึกแล้ว';
+      });
+    }
+  }
+
+  function renderSavedList(){
+    savedCount.textContent = saved.length;
+    reviewBtn.disabled = saved.length === 0;
+    exportBtn.disabled = saved.length === 0;
+    if(saved.length === 0){
+      savedItems.innerHTML = '<p class="empty-saved">ยังไม่มีคำที่บันทึก</p>';
+      return;
+    }
+    savedItems.innerHTML = saved.map((s, idx)=>`
+      <div class="saved-item">
+        <span class="en">${escapeHtml(s.word)}</span>
+        <span class="th">${escapeHtml(s.thai)}</span>
+        <button class="remove-btn" data-idx="${idx}">ลบ</button>
+      </div>
+    `).join('');
+
+    savedItems.querySelectorAll('.remove-btn').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        const idx = parseInt(e.target.dataset.idx, 10);
+        saved.splice(idx, 1);
+        renderSavedList();
+        markSavedWords();
+      });
+    });
+  }
+
+  // ---- Flashcard review ----
+  let reviewOrder = [];
+  let reviewIndex = 0;
+  let reviewFlipped = false;
+
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i = a.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function openReview(){
+    if(saved.length === 0) return;
+    reviewOrder = saved.map((_, idx) => idx);
+    reviewIndex = 0;
+    reviewFlipped = false;
+    reviewOverlay.classList.remove('hidden');
+    renderReviewCard();
+  }
+
+  function closeReview(){
+    reviewOverlay.classList.add('hidden');
+  }
+
+  function renderReviewCard(){
+    if(saved.length === 0){
+      reviewBody.innerHTML = '<p class="review-empty">ยังไม่มีคำที่บันทึกไว้สำหรับทบทวน</p>';
+      return;
+    }
+    const item = saved[reviewOrder[reviewIndex]];
+    const posHtml = item.posList && item.posList.length
+      ? `<div>${item.posList.slice(0,3).map(p=>`<span class="pos">${escapeHtml(p)}</span>`).join(' ')}</div>`
+      : '';
+    const synHtml = item.synonyms && item.synonyms.length
+      ? `<div>${item.synonyms.slice(0,4).map(s=>`<span class="synonym-tag">${escapeHtml(s)}</span>`).join('')}</div>`
+      : '';
+
+    reviewBody.innerHTML = `
+      <div class="review-progress">การ์ด ${reviewIndex + 1} / ${reviewOrder.length}</div>
+      <div class="flashcard ${reviewFlipped ? 'flipped' : ''}" id="flashcardEl">
+        <div class="fc-front">
+          <div class="fc-word">${escapeHtml(item.word)}</div>
+          ${item.phonetic ? `<div class="lookup-phonetic" style="margin:0;">${escapeHtml(item.phonetic)}</div>` : ''}
+          ${posHtml}
+          <div class="fc-hint">แตะเพื่อดูคำแปล</div>
+        </div>
+        <div class="fc-back">
+          <div class="fc-thai">${escapeHtml(item.thai)}</div>
+          ${item.definitionEn ? `<div class="fc-example" style="font-style:normal;">${escapeHtml(item.definitionEn)}</div>` : ''}
+          ${synHtml}
+          ${item.exampleEn ? `<div class="fc-example">${escapeHtml(item.exampleEn)}</div>` : ''}
+          <div class="fc-hint">แตะเพื่อกลับด้าน</div>
+        </div>
+      </div>
+      <div class="review-nav">
+        <button class="ghost" id="prevCardBtn" ${reviewOrder.length < 2 ? 'disabled' : ''}>ก่อนหน้า</button>
+        <button class="ghost" id="shuffleCardBtn">สุ่มลำดับ</button>
+        <button id="nextCardBtn" ${reviewOrder.length < 2 ? 'disabled' : ''}>ถัดไป</button>
+      </div>
+    `;
+
+    document.getElementById('flashcardEl').addEventListener('click', ()=>{
+      reviewFlipped = !reviewFlipped;
+      renderReviewCard();
+    });
+    document.getElementById('prevCardBtn').addEventListener('click', ()=>{
+      reviewIndex = (reviewIndex - 1 + reviewOrder.length) % reviewOrder.length;
+      reviewFlipped = false;
+      renderReviewCard();
+    });
+    document.getElementById('nextCardBtn').addEventListener('click', ()=>{
+      reviewIndex = (reviewIndex + 1) % reviewOrder.length;
+      reviewFlipped = false;
+      renderReviewCard();
+    });
+    document.getElementById('shuffleCardBtn').addEventListener('click', ()=>{
+      reviewOrder = shuffle(reviewOrder);
+      reviewIndex = 0;
+      reviewFlipped = false;
+      renderReviewCard();
+    });
+  }
+
+  function exportSavedWords(){
+    if(saved.length === 0) return;
+
+    const lines = [];
+    lines.push('คลังคำศัพท์ · Vocabulary Vault');
+    lines.push('ส่งออกเมื่อ: ' + new Date().toLocaleString('th-TH'));
+    lines.push('จำนวนคำ: ' + saved.length);
+    lines.push('='.repeat(50));
+    lines.push('');
+
+    saved.forEach((s, idx)=>{
+      lines.push(`${idx + 1}. ${s.word}`);
+      if(s.phonetic) lines.push(`   การออกเสียง: ${s.phonetic}`);
+      if(s.posList && s.posList.length) lines.push(`   ชนิดของคำ: ${s.posList.join(', ')}`);
+      lines.push(`   คำแปลภาษาไทย: ${s.thai}`);
+      if(s.definitionEn) lines.push(`   ความหมาย (English): ${s.definitionEn}`);
+      if(s.synonyms && s.synonyms.length) lines.push(`   คำเหมือน: ${s.synonyms.join(', ')}`);
+      if(s.exampleEn) lines.push(`   ตัวอย่างประโยค: ${s.exampleEn}`);
+      if(s.exampleTh) lines.push(`   คำแปลตัวอย่าง: ${s.exampleTh}`);
+      lines.push('');
+    });
+
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'vocabulary-vault-' + new Date().toISOString().slice(0,10) + '.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  exportBtn.addEventListener('click', exportSavedWords);
+
+  reviewBtn.addEventListener('click', openReview);
+  closeReviewBtn.addEventListener('click', closeReview);
+  reviewOverlay.addEventListener('click', (e)=>{
+    if(e.target === reviewOverlay) closeReview();
+  });
+
+  // Allow Enter within textarea normally; initial state
+  renderSavedList();
+})();
+</script>
+
+</body>
+</html>
