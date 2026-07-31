@@ -262,45 +262,6 @@
     color:var(--ink-soft);
     margin:0;
   }
-
-  /* Grammar check panel */
-  .grammar-box{
-    margin-top:16px;
-    padding-top:16px;
-    border-top:1px dashed var(--line);
-  }
-  .grammar-summary{
-    font-size:14px;
-    margin:8px 0 12px;
-  }
-  .grammar-summary.ok{
-    color:#2E6B4F;
-  }
-  .grammar-summary.issues{
-    color:var(--red);
-  }
-  .grammar-item{
-    border-left:3px solid var(--red);
-    background:var(--paper);
-    padding:10px 14px;
-    margin-bottom:10px;
-    font-size:14px;
-    line-height:1.6;
-  }
-  .grammar-item .g-wrong{
-    text-decoration:line-through;
-    color:var(--red);
-  }
-  .grammar-item .g-right{
-    color:#2E6B4F;
-    font-weight:700;
-  }
-  .grammar-item .g-msg{
-    display:block;
-    margin-top:4px;
-    color:var(--ink-soft);
-    font-size:13px;
-  }
   .save-row{
     margin-top:16px;
     padding-top:14px;
@@ -538,17 +499,8 @@
       <textarea id="inputArea" placeholder="วางบทความภาษาอังกฤษของคุณที่นี่..."></textarea>
       <div class="actions">
         <button id="renderBtn">แสดงคำศัพท์ที่กดได้</button>
-        <button class="ghost" id="grammarBtn">ตรวจ &amp; แก้ไวยากรณ์</button>
         <button class="ghost" id="toeflBtn">แปลงเป็นสไตล์ TOEFL</button>
         <button class="ghost" id="clearBtn">ล้างข้อความ</button>
-      </div>
-      <div class="grammar-box" id="grammarBox" style="display:none;">
-        <span class="lookup-label">ผลตรวจไวยากรณ์</span>
-        <div id="grammarSummary"></div>
-        <div id="grammarList"></div>
-        <div class="actions" id="grammarActions" style="display:none;">
-          <button id="applyCorrectionsBtn">ใช้ข้อความที่แก้แล้ว</button>
-        </div>
       </div>
       <div class="toefl-box" id="toeflBox" style="display:none;">
         <span class="lookup-label">ฉบับปรับสไตล์ TOEFL</span>
@@ -614,12 +566,6 @@
   const toeflBox = document.getElementById('toeflBox');
   const toeflOutput = document.getElementById('toeflOutput');
   const toeflNotes = document.getElementById('toeflNotes');
-  const grammarBtn = document.getElementById('grammarBtn');
-  const grammarBox = document.getElementById('grammarBox');
-  const grammarSummary = document.getElementById('grammarSummary');
-  const grammarList = document.getElementById('grammarList');
-  const grammarActions = document.getElementById('grammarActions');
-  const applyCorrectionsBtn = document.getElementById('applyCorrectionsBtn');
   const article = document.getElementById('article');
   const lookupContent = document.getElementById('lookupContent');
   const savedItems = document.getElementById('savedItems');
@@ -686,89 +632,9 @@
     inputArea.value = '';
     renderArticle();
     toeflBox.style.display = 'none';
-    grammarBox.style.display = 'none';
   });
 
   toeflBtn.addEventListener('click', convertToToefl);
-  grammarBtn.addEventListener('click', checkGrammar);
-
-  let lastCorrectedText = '';
-
-  async function checkGrammar(){
-    const text = inputArea.value.trim();
-    if(!text){
-      alert('กรุณาวางข้อความก่อนตรวจไวยากรณ์');
-      return;
-    }
-    grammarBox.style.display = 'block';
-    grammarSummary.innerHTML = '<p class="spinner-text">กำลังตรวจไวยากรณ์...</p>';
-    grammarList.innerHTML = '';
-    grammarActions.style.display = 'none';
-    grammarBtn.disabled = true;
-
-    try{
-      const res = await fetch('https://api.languagetool.org/v2/check', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ text: text, language: 'en-US' })
-      });
-
-      if(!res.ok){
-        throw new Error('request failed');
-      }
-
-      const data = await res.json();
-      const matches = data.matches || [];
-
-      if(matches.length === 0){
-        grammarSummary.innerHTML = '<p class="grammar-summary ok">ไม่พบข้อผิดพลาดด้านไวยากรณ์ — ข้อความถูกต้องดีแล้ว</p>';
-        grammarList.innerHTML = '';
-        grammarActions.style.display = 'none';
-        return;
-      }
-
-      grammarSummary.innerHTML = `<p class="grammar-summary issues">พบจุดที่ควรแก้ไข ${matches.length} จุด</p>`;
-
-      let listHtml = '';
-      // Build corrected text by applying first suggested replacement, back-to-front to keep offsets valid
-      let corrected = text;
-      const sortedForApply = [...matches].sort((a,b)=>b.offset-a.offset);
-      sortedForApply.forEach(m=>{
-        if(m.replacements && m.replacements[0] && m.replacements[0].value !== undefined){
-          const before = corrected.slice(0, m.offset);
-          const after = corrected.slice(m.offset + m.length);
-          corrected = before + m.replacements[0].value + after;
-        }
-      });
-      lastCorrectedText = corrected;
-
-      matches.slice(0, 30).forEach(m=>{
-        const wrongText = text.substr(m.offset, m.length);
-        const suggestion = (m.replacements && m.replacements[0]) ? m.replacements[0].value : '';
-        listHtml += `<div class="grammar-item">
-          <span class="g-wrong">${escapeHtml(wrongText)}</span>
-          ${suggestion ? ` → <span class="g-right">${escapeHtml(suggestion)}</span>` : ''}
-          <span class="g-msg">${escapeHtml(m.message || '')}</span>
-        </div>`;
-      });
-      grammarList.innerHTML = listHtml;
-      grammarActions.style.display = 'flex';
-
-    }catch(err){
-      grammarSummary.innerHTML = '<p class="grammar-summary issues">ไม่สามารถเชื่อมต่อบริการตรวจไวยากรณ์ได้ในขณะนี้ ลองใหม่อีกครั้ง</p>';
-      grammarList.innerHTML = '';
-      grammarActions.style.display = 'none';
-    }finally{
-      grammarBtn.disabled = false;
-    }
-  }
-
-  applyCorrectionsBtn.addEventListener('click', ()=>{
-    if(!lastCorrectedText) return;
-    inputArea.value = lastCorrectedText;
-    renderArticle();
-    grammarBox.style.display = 'none';
-  });
 
   async function convertToToefl(){
     const text = inputArea.value.trim();
@@ -812,8 +678,8 @@ ${text}
       toeflOutput.innerHTML = wordify(toeflText).html;
       toeflNotes.textContent = parsed.notes ? ('หมายเหตุ: ' + parsed.notes) : '';
     }catch(err){
-      toeflOutput.textContent = '';
-      toeflNotes.innerHTML = 'ฟีเจอร์นี้ใช้ AI ของ Claude โดยตรง จึงใช้งานได้เฉพาะตอนเปิดแอปนี้อยู่ในหน้าแชทกับ Claude เท่านั้น เมื่อนำไฟล์ไปโฮสต์เป็นเว็บของตัวเอง (เช่น GitHub Pages) ฟีเจอร์นี้จะใช้งานไม่ได้ครับ — ฟีเจอร์แปลคำศัพท์แบบพจนานุกรมด้านล่างยังใช้งานได้ตามปกติ';
+      toeflOutput.textContent = 'เกิดข้อผิดพลาด ลองใหม่อีกครั้ง';
+      toeflNotes.textContent = '';
     }finally{
       toeflBtn.disabled = false;
     }
@@ -843,72 +709,55 @@ ${text}
 
     lookupContent.innerHTML = `<p class="spinner-text">กำลังค้นหา "${escapeHtml(word)}" ...</p>`;
 
-    let phonetic = '';
-    let posList = [];
-    let definitionEn = '';
-    let synonyms = [];
-    let exampleEn = '';
-    let thaiTranslation = '';
-    let hadError = false;
+    const prompt = `ให้ข้อมูลคำศัพท์ภาษาอังกฤษคำนี้: "${word}"
 
-    // 1) English dictionary: phonetic, part of speech, definition, synonyms, example
-    try{
-      const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(key)}`);
-      if(res.ok){
-        const data = await res.json();
-        if(Array.isArray(data) && data[0]){
-          const entry = data[0];
-          if(entry.phonetic) phonetic = entry.phonetic;
-          if(!phonetic && entry.phonetics){
-            const withText = entry.phonetics.find(p=>p.text);
-            if(withText) phonetic = withText.text;
-          }
-          if(entry.meanings && entry.meanings.length){
-            posList = entry.meanings.map(m=>m.partOfSpeech).filter(Boolean);
-            const firstMeaning = entry.meanings[0];
-            if(firstMeaning.definitions && firstMeaning.definitions[0]){
-              definitionEn = firstMeaning.definitions[0].definition || '';
-              exampleEn = firstMeaning.definitions[0].example || '';
-            }
-            entry.meanings.forEach(m=>{
-              if(m.synonyms && m.synonyms.length){
-                synonyms = synonyms.concat(m.synonyms);
-              }
-            });
-            synonyms = [...new Set(synonyms)].slice(0,5);
-          }
-        }
-      }
-    }catch(err){
-      // dictionary lookup is best-effort; continue to translation
-    }
+ตอบกลับเป็น JSON เท่านั้น ห้ามมีข้อความอื่น ห้ามใส่ markdown fence (\`\`\`) ห้ามมีคำอธิบายเพิ่มเติมใดๆ ทั้งสิ้น ให้ตรงตามรูปแบบนี้เป๊ะ:
 
-    // 2) Thai translation
+{"phonetic":"การออกเสียงแบบ IPA เช่น /haɪ/","pos":["ชนิดของคำ เช่น noun, verb, adjective, adverb ใส่ได้มากกว่า 1"],"thai":"คำแปลภาษาไทยที่ตรงและกระชับที่สุด","definition_en":"คำอธิบายความหมายเป็นภาษาอังกฤษแบบสั้นกระชับ 1 ประโยค","synonyms":["คำเหมือนภาษาอังกฤษ 3-5 คำ"],"example_en":"ประโยคตัวอย่างภาษาอังกฤษสั้นๆที่ใช้คำนี้","example_th":"คำแปลภาษาไทยของประโยคตัวอย่าง"}
+
+ถ้า "${word}" ไม่ใช่คำภาษาอังกฤษที่มีความหมาย ให้ตอบ {"error":"not_found"} เท่านั้น`;
+
+    let info;
     try{
-      const res2 = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|th`);
-      if(res2.ok){
-        const data2 = await res2.json();
-        if(data2 && data2.responseData && data2.responseData.translatedText){
-          thaiTranslation = data2.responseData.translatedText;
-        }
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6",
+          max_tokens: 1000,
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
+      const data = await response.json();
+      const rawText = (data.content || [])
+        .map(item => item.type === "text" ? item.text : "")
+        .filter(Boolean)
+        .join("\n")
+        .replace(/```json|```/g, "")
+        .trim();
+
+      const parsed = JSON.parse(rawText);
+
+      if(parsed.error){
+        info = { errorMsg: 'ไม่พบข้อมูลคำนี้ อาจสะกดผิดหรือไม่ใช่คำภาษาอังกฤษ' };
       } else {
-        hadError = true;
+        info = {
+          phonetic: parsed.phonetic || '',
+          posList: Array.isArray(parsed.pos) ? parsed.pos : [],
+          thaiTranslation: parsed.thai || '',
+          definitionEn: parsed.definition_en || '',
+          synonyms: Array.isArray(parsed.synonyms) ? parsed.synonyms : [],
+          exampleEn: parsed.example_en || '',
+          exampleTh: parsed.example_th || '',
+          errorMsg: ''
+        };
+        cache[key] = info;
       }
     }catch(err){
-      hadError = true;
+      info = { errorMsg: 'เกิดข้อผิดพลาดในการค้นหาคำนี้ ลองใหม่อีกครั้ง' };
     }
 
-    if(myToken !== requestToken) return;
-
-    if(!thaiTranslation && !definitionEn){
-      renderLookup(word, { errorMsg: hadError
-        ? 'ไม่สามารถเชื่อมต่อบริการแปลได้ในขณะนี้ ลองใหม่อีกครั้ง'
-        : 'ไม่พบคำนี้ในพจนานุกรม อาจสะกดผิดหรือเป็นคำเฉพาะ' });
-      return;
-    }
-
-    const info = { phonetic, posList, thaiTranslation, definitionEn, synonyms, exampleEn, exampleTh: '', errorMsg: '' };
-    cache[key] = info;
+    if(myToken !== requestToken) return; // a newer lookup started, discard this result
     renderLookup(word, info);
   }
 
